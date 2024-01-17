@@ -21,6 +21,12 @@ const useNumber = (
     setValue(inputValue);
   };
 
+  const reset = () => {
+    setColumn(initialColumn);
+    setComparison(initialComparison);
+    setValue(initialValue);
+  };
+
   return {
     column,
     comparison,
@@ -28,6 +34,7 @@ const useNumber = (
     updateColumn,
     updateComparison,
     updateValue,
+    reset,
   };
 };
 

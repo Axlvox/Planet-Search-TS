@@ -7,6 +7,7 @@ function Table() {
   const { planets, loading } = useContext(PlanetContext);
 
   const [searchTerm, setSearchTerm] = useFilter();
+  const [appliedFilters, setAppliedFilters] = useState([]);
 
   const {
     column,
@@ -15,12 +16,11 @@ function Table() {
     updateColumn,
     updateComparison,
     updateValue,
+    reset: resetNumberFilter,
   } = useNumber('population', 'maior que', 0);
 
-  const [filteredPlanets, setFilteredPlanets] = useState([]);
-
   const applyNumericFilter = () => {
-    const numericFilteredPlanets = planets.filter((planet) => {
+    const filteredPlanets = planets.filter((planet) => {
       const planetValue = parseFloat(planet[column]);
       const filterValue = parseFloat(value);
 
@@ -36,7 +36,8 @@ function Table() {
       }
     });
 
-    setFilteredPlanets(numericFilteredPlanets);
+    setAppliedFilters([...appliedFilters, { column, comparison, value }]);
+    resetNumberFilter();
   };
 
   const handleFilterClick = () => {
@@ -47,12 +48,30 @@ function Table() {
     return <p>Loading...</p>;
   }
 
-  const textFilteredPlanets = planets.filter((planet) => {
-    return planet.name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  let displayedPlanets = planets;
 
-  const displayedPlanets = filteredPlanets.length > 0
-    ? filteredPlanets : textFilteredPlanets;
+  if (searchTerm) {
+    displayedPlanets = displayedPlanets.filter((planet) => planet.name.toLowerCase()
+      .includes(searchTerm.toLowerCase()));
+  }
+
+  appliedFilters.forEach((filter) => {
+    displayedPlanets = displayedPlanets.filter((planet) => {
+      const planetValue = parseFloat(planet[filter.column]);
+      const filterValue = parseFloat(filter.value);
+
+      switch (filter.comparison) {
+        case 'maior que':
+          return planetValue > filterValue;
+        case 'menor que':
+          return planetValue < filterValue;
+        case 'igual a':
+          return planetValue === filterValue;
+        default:
+          return true;
+      }
+    });
+  });
 
   return (
     <div>
@@ -97,12 +116,18 @@ function Table() {
       />
       <button
         data-testid="button-filter"
-        onClick={ () => {
-          handleFilterClick();
-        } }
+        onClick={ () => handleFilterClick() }
       >
         Filtrar
       </button>
+
+      <ul>
+        {appliedFilters.map((filter, index) => (
+          <li key={ index }>
+            {`${filter.column} ${filter.comparison} ${filter.value}`}
+          </li>
+        ))}
+      </ul>
 
       <table>
         <thead>
