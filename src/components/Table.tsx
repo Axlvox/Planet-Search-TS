@@ -1,4 +1,3 @@
-// Table.js
 import React, { useContext, useState } from 'react';
 import PlanetContext from '../context/PlanetContext';
 import useFilter from '../hooks/useFilter';
