@@ -1,9 +1,11 @@
-import React, { useContext, useState } from 'react';
+// Table.js
+import React, { useContext } from 'react';
 import PlanetContext from '../context/PlanetContext';
+import useFilter from '../hooks/useFilter';
 
 function Table() {
   const { planets, loading } = useContext(PlanetContext);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useFilter();
 
   if (loading) {
     return <p>Loading...</p>;
