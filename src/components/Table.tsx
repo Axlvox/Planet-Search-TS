@@ -20,24 +20,26 @@ function Table() {
   } = useNumber('population', 'maior que', 0);
 
   const applyNumericFilter = () => {
-    const filteredPlanets = planets.filter((planet) => {
-      const planetValue = parseFloat(planet[column]);
-      const filterValue = parseFloat(value);
+    if (planets) {
+      const filteredPlanets = planets.filter((planet) => {
+        const planetValue = parseFloat(planet[column]);
+        const filterValue = parseFloat(value);
 
-      switch (comparison) {
-        case 'maior que':
-          return planetValue > filterValue;
-        case 'menor que':
-          return planetValue < filterValue;
-        case 'igual a':
-          return planetValue === filterValue;
-        default:
-          return true;
-      }
-    });
+        switch (comparison) {
+          case 'maior que':
+            return planetValue > filterValue;
+          case 'menor que':
+            return planetValue < filterValue;
+          case 'igual a':
+            return planetValue === filterValue;
+          default:
+            return true;
+        }
+      });
 
-    setAppliedFilters([...appliedFilters, { column, comparison, value }]);
-    resetNumberFilter();
+      setAppliedFilters([...appliedFilters, { column, comparison, value }]);
+      resetNumberFilter();
+    }
   };
 
   const removeNumericFilter = (index) => {
@@ -70,12 +72,12 @@ function Table() {
     'surface_water'];
   let displayedPlanets = planets;
 
-  if (searchTerm) {
+  if (displayedPlanets && displayedPlanets.length > 0 && searchTerm) {
     displayedPlanets = displayedPlanets.filter((planet) => planet.name.toLowerCase()
       .includes(searchTerm.toLowerCase()));
   }
 
-  appliedFilters.forEach((filter, index) => {
+  appliedFilters.forEach((filter) => {
     availableColumns = availableColumns.filter((option) => option !== filter.column);
 
     displayedPlanets = displayedPlanets.filter((planet) => {
@@ -132,10 +134,7 @@ function Table() {
         value={ value }
         onChange={ (e) => updateValue(e.target.value) }
       />
-      <button
-        data-testid="button-filter"
-        onClick={ () => handleFilterClick() }
-      >
+      <button data-testid="button-filter" onClick={ () => handleFilterClick() }>
         Filtrar
       </button>
 
@@ -163,19 +162,22 @@ function Table() {
       <table>
         <thead>
           <tr>
-            {Object.keys(planets[0] || {}).map((key) => (
-              <th key={ key }>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
-            ))}
+            {planets
+              && planets[0]
+              && Object.keys(planets[0]).map((key) => (
+                <th key={ key }>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
+              ))}
           </tr>
         </thead>
         <tbody>
-          {displayedPlanets.map((planet) => (
-            <tr key={ planet.name }>
-              {Object.keys(planets[0] || {}).map((key) => (
-                <td key={ `${planet.name}-${key}` }>{planet[key]}</td>
-              ))}
-            </tr>
-          ))}
+          {displayedPlanets
+            && displayedPlanets.map((planet) => (
+              <tr key={ planet.name }>
+                {Object.keys(planet).map((key) => (
+                  <td key={ `${planet.name}-${key}` }>{planet[key]}</td>
+                ))}
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
