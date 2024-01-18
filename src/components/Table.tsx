@@ -48,6 +48,11 @@ function Table() {
     return <p>Loading...</p>;
   }
 
+  let availableColumns = ['population',
+    'orbital_period',
+    'diameter',
+    'rotation_period',
+    'surface_water'];
   let displayedPlanets = planets;
 
   if (searchTerm) {
@@ -56,6 +61,8 @@ function Table() {
   }
 
   appliedFilters.forEach((filter) => {
+    availableColumns = availableColumns.filter((option) => option !== filter.column);
+
     displayedPlanets = displayedPlanets.filter((planet) => {
       const planetValue = parseFloat(planet[filter.column]);
       const filterValue = parseFloat(filter.value);
@@ -87,14 +94,10 @@ function Table() {
         value={ column }
         onChange={ (e) => updateColumn(e.target.value) }
       >
-        {['population',
-          'orbital_period',
-          'diameter',
-          'rotation_period',
-          'surface_water'].map((option) => (
-            <option key={ option } value={ option }>
-              {option}
-            </option>
+        {availableColumns.map((option) => (
+          <option key={ option } value={ option }>
+            {option}
+          </option>
         ))}
       </select>
       <select
