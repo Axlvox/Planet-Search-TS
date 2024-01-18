@@ -40,6 +40,21 @@ function Table() {
     resetNumberFilter();
   };
 
+  const removeNumericFilter = (index) => {
+    const updatedFilters = [...appliedFilters];
+    const removedFilter = updatedFilters.splice(index, 1)[0];
+    setAppliedFilters(updatedFilters);
+
+    // Adiciona de volta a opção ao select
+    updateColumn(removedFilter.column);
+  };
+
+  const removeAllNumericFilters = () => {
+    setAppliedFilters([]);
+    // Adiciona todas as opções de volta ao select
+    resetNumberFilter();
+  };
+
   const handleFilterClick = () => {
     applyNumericFilter();
   };
@@ -60,7 +75,7 @@ function Table() {
       .includes(searchTerm.toLowerCase()));
   }
 
-  appliedFilters.forEach((filter) => {
+  appliedFilters.forEach((filter, index) => {
     availableColumns = availableColumns.filter((option) => option !== filter.column);
 
     displayedPlanets = displayedPlanets.filter((planet) => {
@@ -126,11 +141,24 @@ function Table() {
 
       <ul>
         {appliedFilters.map((filter, index) => (
-          <li key={ index }>
+          <li key={ index } data-testid="filter">
             {`${filter.column} ${filter.comparison} ${filter.value}`}
+            <button
+              data-testid={ `button-remove-filter-${index}` }
+              onClick={ () => removeNumericFilter(index) }
+            >
+              X
+            </button>
           </li>
         ))}
       </ul>
+
+      <button
+        data-testid="button-remove-filters"
+        onClick={ () => removeAllNumericFilters() }
+      >
+        Remover todas filtragens
+      </button>
 
       <table>
         <thead>
