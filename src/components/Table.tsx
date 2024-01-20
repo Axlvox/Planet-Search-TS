@@ -1,4 +1,5 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
+import { applyFilters, sortPlanets } from './filterUtils';
 import PlanetContext from '../context/PlanetContext';
 import useFilter from '../hooks/useFilter';
 import useNumber from '../hooks/useNumber';
@@ -8,6 +9,11 @@ function Table() {
 
   const [searchTerm, setSearchTerm] = useFilter();
   const [appliedFilters, setAppliedFilters] = useState([]);
+  const [sortOrder, setSortOrder] = useState({
+    column: 'population',
+    sort: 'ASC',
+  });
+  const [displayedPlanets, setDisplayedPlanets] = useState(planets);
 
   const {
     column,
@@ -19,72 +25,20 @@ function Table() {
     reset: resetNumberFilter,
   } = useNumber('population', 'maior que', 0);
 
+  useEffect(() => {
+    setDisplayedPlanets(applyFilters(planets, appliedFilters, sortOrder, searchTerm));
+  }, [planets, appliedFilters, sortOrder, searchTerm]);
+
   const applyNumericFilter = () => {
-    if (planets) {
-      const filteredPlanets = planets.filter((planet) => {
-        const planetValue = parseFloat(planet[column]);
-        const filterValue = parseFloat(value);
-
-        switch (comparison) {
-          case 'maior que':
-            return planetValue > filterValue;
-          case 'menor que':
-            return planetValue < filterValue;
-          case 'igual a':
-            return planetValue === filterValue;
-          default:
-            return true;
-        }
-      });
-
-      setAppliedFilters([...appliedFilters, { column, comparison, value }]);
-      resetNumberFilter();
+    if (!planets) {
+      return;
     }
-  };
 
-  const removeNumericFilter = (index) => {
-    const updatedFilters = [...appliedFilters];
-    const removedFilter = updatedFilters.splice(index, 1)[0];
-    setAppliedFilters(updatedFilters);
+    const filteredPlanets = planets.filter((planet) => {
+      const planetValue = parseFloat(planet[column]);
+      const filterValue = parseFloat(value);
 
-    // Adiciona de volta a opção ao select
-    updateColumn(removedFilter.column);
-  };
-
-  const removeAllNumericFilters = () => {
-    setAppliedFilters([]);
-    // Adiciona todas as opções de volta ao select
-    resetNumberFilter();
-  };
-
-  const handleFilterClick = () => {
-    applyNumericFilter();
-  };
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  let availableColumns = ['population',
-    'orbital_period',
-    'diameter',
-    'rotation_period',
-    'surface_water'];
-  let displayedPlanets = planets;
-
-  if (displayedPlanets && displayedPlanets.length > 0 && searchTerm) {
-    displayedPlanets = displayedPlanets.filter((planet) => planet.name.toLowerCase()
-      .includes(searchTerm.toLowerCase()));
-  }
-
-  appliedFilters.forEach((filter) => {
-    availableColumns = availableColumns.filter((option) => option !== filter.column);
-
-    displayedPlanets = displayedPlanets.filter((planet) => {
-      const planetValue = parseFloat(planet[filter.column]);
-      const filterValue = parseFloat(filter.value);
-
-      switch (filter.comparison) {
+      switch (comparison) {
         case 'maior que':
           return planetValue > filterValue;
         case 'menor que':
@@ -95,6 +49,41 @@ function Table() {
           return true;
       }
     });
+
+    setAppliedFilters([...appliedFilters, { column, comparison, value }]);
+    resetNumberFilter();
+  };
+
+  const removeNumericFilter = (index) => {
+    const removedFilter = appliedFilters[index];
+    const updatedFilters = appliedFilters.filter((_, i) => i !== index);
+    setAppliedFilters(updatedFilters);
+    updateColumn(removedFilter.column);
+  };
+
+  const removeAllNumericFilters = () => {
+    setAppliedFilters([]);
+    resetNumberFilter();
+  };
+
+  const handleFilterClick = () => {
+    applyNumericFilter();
+  };
+
+  const handleSortSubmit = () => {
+    const sortedPlanets = sortPlanets(displayedPlanets, sortOrder);
+    setDisplayedPlanets(sortedPlanets);
+  };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  let availableColumns = ['population', 'orbital_period', 'diameter',
+    'rotation_period', 'surface_water'];
+
+  appliedFilters.forEach((filter) => {
+    availableColumns = availableColumns.filter((option) => option !== filter.column);
   });
 
   return (
@@ -134,7 +123,10 @@ function Table() {
         value={ value }
         onChange={ (e) => updateValue(e.target.value) }
       />
-      <button data-testid="button-filter" onClick={ () => handleFilterClick() }>
+      <button
+        data-testid="button-filter"
+        onClick={ () => handleFilterClick() }
+      >
         Filtrar
       </button>
 
@@ -152,6 +144,51 @@ function Table() {
         ))}
       </ul>
 
+      <div>
+        <label htmlFor="column-sort" data-testid="column-sort-label">Ordenar por:</label>
+        <select
+          id="column-sort"
+          data-testid="column-sort"
+          value={ sortOrder.column }
+          onChange={ (e) => setSortOrder({ ...sortOrder, column: e.target.value }) }
+        >
+          {availableColumns.map((option) => (
+            <option key={ option } value={ option }>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <div>
+          <label>
+            Ascendente
+            <input
+              type="radio"
+              data-testid="column-sort-input-asc"
+              value="ASC"
+              checked={ sortOrder.sort === 'ASC' }
+              onChange={ () => setSortOrder({ ...sortOrder, sort: 'ASC' }) }
+            />
+          </label>
+          <label>
+            Descendente
+            <input
+              type="radio"
+              data-testid="column-sort-input-desc"
+              value="DESC"
+              checked={ sortOrder.sort === 'DESC' }
+              onChange={ () => setSortOrder({ ...sortOrder, sort: 'DESC' }) }
+            />
+          </label>
+        </div>
+        <button
+          data-testid="column-sort-button"
+          onClick={ () => handleSortSubmit() }
+        >
+          Ordenar
+        </button>
+      </div>
+
       <button
         data-testid="button-remove-filters"
         onClick={ () => removeAllNumericFilters() }
@@ -162,22 +199,25 @@ function Table() {
       <table>
         <thead>
           <tr>
-            {planets
-              && planets[0]
-              && Object.keys(planets[0]).map((key) => (
-                <th key={ key }>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
-              ))}
+            {planets && planets.length > 0 && Object.keys(planets[0] || {}).map((key) => (
+              <th key={ key }>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {displayedPlanets
-            && displayedPlanets.map((planet) => (
-              <tr key={ planet.name }>
-                {Object.keys(planet).map((key) => (
-                  <td key={ `${planet.name}-${key}` }>{planet[key]}</td>
-                ))}
-              </tr>
-            ))}
+          {displayedPlanets && displayedPlanets.length > 0
+          && displayedPlanets.map((planet) => (
+            <tr key={ planet.name }>
+              {Object.keys(planets[0] || {}).map((key) => (
+                <td
+                  key={ `${planet.name}-${key}` }
+                  data-testid={ key === 'name' ? 'planet-name' : undefined }
+                >
+                  {planet[key]}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
